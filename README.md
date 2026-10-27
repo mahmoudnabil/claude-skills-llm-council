@@ -66,27 +66,29 @@ modes/proposal.md        NSF / NIH / DoD panel simulation
 modes/style.md           prose critique
 ```
 
-## Install (each Mac)
+## Install
 
-This repo is cloned directly into the global skills folder. It is not part
-of `mmahmoud-skills`, so `sync-skills` does not carry it to other Macs.
+This repo is a git submodule of `mmahmoud-skills` at `skills/llm-council`
+and is listed in its `skills.manifest`. `sync-skills` carries it to every
+Mac: `install.sh` checks out the submodule, symlinks it to
+`~/.cursor/skills/llm-council`, and writes the `/llm-council` slash command.
 
 ```bash
-git clone git@github.com:mahmoudnabil/claude-skills-llm-council.git ~/.cursor/skills/llm-council
-cd ~/.cursor/skills/llm-council
-git remote add upstream https://github.com/aiwithremy/claude-skills-llm-council.git
+# New Mac
+git clone --recurse-submodules git@github.com:mahmoudnabil/mmahmoud-skills.git ~/mmahmoud-skills
+cd ~/mmahmoud-skills && ./install.sh
+
+# Existing Mac
+~/.cursor/skills/sync-skills/scripts/sync_skills.sh pull
 ```
 
-The `/llm-council` slash command lives in `~/.cursor/commands/llm-council.md`:
+Edit the skill in place, then run `sync_skills.sh sync`. It commits and
+pushes changes to this fork first, then records the new commit in
+`mmahmoud-skills`.
 
-```markdown
-# LLM Council
-
-User invoked `/llm-council`. Load and follow the skill file, then read the mode file for the selected mode before convening the council.
-
-Skill: /Users/mahmoudmahmoud/.cursor/skills/llm-council/SKILL.md
-Modes: /Users/mahmoudmahmoud/.cursor/skills/llm-council/modes/
-```
+Standalone use (without `mmahmoud-skills`):
+`git clone git@github.com:mahmoudnabil/claude-skills-llm-council.git ~/.cursor/skills/llm-council`.
+Context lookups that rely on `mmahmoud-skills` paths will not resolve.
 
 Open a new Agent chat after installing so Cursor picks up the skill.
 
@@ -97,7 +99,7 @@ Dependencies (already in `mmahmoud-skills`): `academic-writing-style`,
 ## Updating from upstream
 
 ```bash
-cd ~/.cursor/skills/llm-council
+cd ~/mmahmoud-skills/skills/llm-council
 git fetch upstream
 git log --oneline main..upstream/main   # review before merging
 ```
