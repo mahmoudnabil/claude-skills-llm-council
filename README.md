@@ -1,99 +1,105 @@
+# LLM Council (Academic fork)
+
+A Cursor Agent skill that runs a paper, rebuttal, research decision, grant
+proposal, or section of prose through five advisors on five different
+models. The advisors peer-review each other anonymously, and a chairman
+writes the verdict.
+
+Customized by Mahmoud Mahmoud (University of Alabama) for academic writing
+and grant proposals. Forked from
+[aiwithremy/claude-skills-llm-council](https://github.com/aiwithremy/claude-skills-llm-council)
+by [Ole Lehmann](https://x.com/itsolelehmann), which is based on Andrej
+Karpathy's [LLM Council](https://github.com/karpathy/llm-council).
+
+## What changed from upstream
+
+- Five academic modes instead of one general business council.
+- One model per seat (true multi-model council, as in Karpathy's original)
+  instead of five personas on one model.
+- No reviewer grades a response written by its own model.
+- Context comes from the paper and proposal folders (`003. Papers`,
+  `002. Proposals`), the `academic-writing-style` rules, the `review-paper`
+  critique list, and NSF solicitations fetched with `nsf-research-automator`.
+- Findings are anchored to sections, `\label`s, paragraphs, or reviewer
+  comment IDs. The skill never invents citations or results.
+- The council only observes. It edits files only after you approve items from
+  the action list ("green").
+
+## Modes
+
+| Mode | Example | Output |
+|------|---------|--------|
+| `review` | `/llm-council review 031` | Predicted outcome, Major/Minor issues by section, top 3 changes |
+| `rebuttal` | `/llm-council rebuttal 028 reviews.pdf` | Per-comment plan (concede / clarify / push back / new experiment), page budget |
+| `decide` | `/llm-council decide 031 TIFS vs TDSC` | Options table, recommendation |
+| `proposal` | `/llm-council proposal 036 26-512` | Panel rating, solicitation fit, compliance gaps, highest-leverage revision |
+| `style` | `/llm-council style 031 Sec. III` | Numbered prose observations by subsection (academic-writing-style) |
+
+If you leave out the mode, the skill infers it from the input.
+
+## Model roster
+
+Defined in the table at the top of `SKILL.md`. Edit that table to swap
+models. If a model slug is unavailable, that seat falls back to the parent
+model and the verdict says so.
+
+| Seat | Lens | Model |
+|------|------|-------|
+| 1 | Contrarian / Reviewer 2 | GPT-5.6 Sol |
+| 2 | First Principles / Methodologist | Claude Opus 5.5 |
+| 3 | Expansionist / Area Chair or Program Officer | Gemini 4 Argon |
+| 4 | Outsider / non-specialist reader | Grok 4.7 |
+| 5 | Executor / Revision Editor | Composer 2.5 |
+| Chair | Synthesis | Claude Opus 5.5 |
+
+A full run makes 11 sub-agent calls. Scope long papers to the sections that
+matter.
+
+## Files
+
+```text
+SKILL.md                 core flow, roster, prompt templates, edit gate
+modes/paper-review.md    mock peer review
+modes/rebuttal.md        responses to real reviews
+modes/decision.md        venue, framing, experiments
+modes/proposal.md        NSF / NIH / DoD panel simulation
+modes/style.md           prose critique
+```
+
+## Install (each Mac)
+
+This repo is cloned directly into the global skills folder. It is not part
+of `mmahmoud-skills`, so `sync-skills` does not carry it to other Macs.
+
+```bash
+git clone git@github.com:mahmoudnabil/claude-skills-llm-council.git ~/.cursor/skills/llm-council
+cd ~/.cursor/skills/llm-council
+git remote add upstream https://github.com/aiwithremy/claude-skills-llm-council.git
+```
+
+The `/llm-council` slash command lives in `~/.cursor/commands/llm-council.md`:
+
+```markdown
 # LLM Council
 
-A Claude skill that turns one question into five expert opinions, plus a final verdict.
+User invoked `/llm-council`. Load and follow the skill file, then read the mode file for the selected mode before convening the council.
 
-Built by [Ole Lehmann](https://x.com/itsolelehmann). Based on Andrej Karpathy's [LLM Council](https://github.com/karpathy/llm-council) methodology.
+Skill: /Users/mahmoudmahmoud/.cursor/skills/llm-council/SKILL.md
+Modes: /Users/mahmoudmahmoud/.cursor/skills/llm-council/modes/
+```
 
-Works in **Claude Code** and **Claude Cowork** (claude.ai).
+Open a new Agent chat after installing so Cursor picks up the skill.
 
----
+Dependencies (already in `mmahmoud-skills`): `academic-writing-style`,
+`review-paper` (`resolve_paper.py`, `review.md`), `lib/proposal_resolve.py`,
+`config/locations.env`, `nsf-research-automator`, `pdf-to-markdown`.
 
-## *What's GitHub?*
+## Updating from upstream
 
-Think of GitHub as Google Drive, but for code. Instead of sharing photos and files, people use GitHub to share code and snippets like this skill. You're on a GitHub page right now.
+```bash
+cd ~/.cursor/skills/llm-council
+git fetch upstream
+git log --oneline main..upstream/main   # review before merging
+```
 
----
-
-## What's a skill?
-
-A skill is a small set of instructions you give to your AI. Think of it like a job description for a specific task. Once installed, you can trigger it with a phrase and Claude knows exactly how to handle it.
-
-This particular skill teaches Claude how to run a "council" for you. When you ask a hard question or face a tough decision, Claude spins up 5 different advisors who each think about it from a fundamentally different angle, peer-review each other's takes, and deliver a final synthesized answer.
-
----
-
-## What it does
-
-You ask one AI a question, you get one answer. That answer might be great. It might be mid. You have no way to tell because you only saw one perspective.
-
-The council fixes this. It runs your question through 5 independent advisors, each thinking from a different angle. They review each other's work. A chairman synthesizes everything into a final recommendation that tells you where the advisors agree, where they clash, and what you should actually do.
-
----
-
-## When to use it
-
-Good council questions:
-
-- "Should I launch a $97 workshop or a $497 course?"
-- "Which of these 3 positioning angles is strongest?"
-- "I'm thinking of pivoting from X to Y. Am I crazy?"
-- "Here's my landing page copy. What's weak?"
-- "Should I hire a VA or build an automation first?"
-
-Bad council questions:
-
-- "What's the capital of France?" (one right answer, no need for perspectives)
-- "Write me a tweet" (creation task, not a decision)
-- "Summarize this article" (processing task, not judgment)
-
-The council shines when there's genuine uncertainty and the cost of a bad call is high. If you already know the answer and just want validation, the council will likely tell you things you don't want to hear. That's the point.
-
----
-
-## How to install it (no terminal needed)
-
-Pick whichever option feels easier. Both work in Claude Code and Claude Cowork.
-
-### Option 1: Let Claude install it for you
-
-Open a new chat in Claude and paste this in:
-
-> Please install this Claude skill for me. The SKILL.md file lives in this GitHub repo: https://github.com/aiwithremy/claude-skills-llm-council
->
-> Set it up so I can start using it. Walk me through anything you need from me.
-
-Claude will fetch the file and put it in the right place. If it can't do it automatically (some setups need you to upload manually), it'll tell you exactly what to click.
-
-### Option 2: Download the file and ask Claude to set it up
-
-1. Click [SKILL.md](./SKILL.md) at the top of this repo.
-2. Click the download button on the right side of the file view to save it to your computer.
-3. Open Claude and paste this in:
-
-> I just downloaded a file called SKILL.md for the LLM Council skill. Can you install it for me? Walk me through wherever you need me to put it.
-
-Claude will guide you the rest of the way.
-
----
-
-## How to use it
-
-Once installed, in any Claude conversation, just say one of these:
-
-- "council this"
-- "run the council on [your question]"
-- "pressure-test this"
-- "stress-test this"
-- "war room this"
-
-Claude will spin up the 5 advisors, run the peer review, and deliver the chairman's verdict.
-
----
-
-## Credit
-
-This skill was built by [Ole Lehmann](https://x.com/itsolelehmann). Go follow him, the man cooks.
-
-The methodology is adapted from Andrej Karpathy's [LLM Council](https://github.com/karpathy/llm-council).
-
-This repo just makes it easier to share with friends who want to try it.
+Upstream is a general-purpose council, so merge selectively.
